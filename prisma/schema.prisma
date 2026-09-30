@@ -1,0 +1,145 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String       @id @default(cuid())
+  name        String
+  mobile      String       @unique
+  email       String?
+  password    String       @default("$2a$10$wT5g80nQc3M/HhM86n6JDeq24W4D5e0K4n6A5H1a3d0v5l4r9pG4W")
+  mustChangePassword Boolean @default(false)
+  role            String           @default("EMPLOYEE") // "ADMIN" | "EMPLOYEE"
+  status          String           @default("ACTIVE")   // "ACTIVE" | "INACTIVE"
+  trips           Trip[]           @relation("PrimaryRiderTrips")
+  coRiderTrips    Trip[]           @relation("CoRiderTrips")
+  fuelEntries     FuelEntry[]
+  fuelSettlements FuelSettlement[]
+  auditLogs       AuditLog[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Bike {
+  id                 String       @id @default(cuid())
+  name               String
+  registrationNumber String       @unique
+  currentKm          Int          @default(0)
+  fuelType           String       @default("Petrol")
+  mileageTarget      Float        @default(30.0)
+  fuelPrice          Float        @default(113.0)
+  status             String       @default("AVAILABLE") // "AVAILABLE" | "IN_USE" | "MAINTENANCE"
+  trips              Trip[]
+  fuelEntries        FuelEntry[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model Trip {
+  id         String   @id @default(cuid())
+  userId     String
+  bikeId     String
+  date       DateTime @default(now())
+  startingKm Int
+  endingKm   Int      @default(0)
+  distanceKm Int      @default(0)
+  purpose    String
+  remarks      String?
+  status     String   @default("COMPLETED") // "ACTIVE" | "COMPLETED"
+  hasFuelEntry Boolean  @default(false)
+
+  // Odometer Photo & OCR metadata
+  startOdometerPhoto String?
+  endOdometerPhoto   String?
+  startReadingMethod String   @default("MANUAL") // "PHOTO" | "MANUAL"
+  endReadingMethod   String   @default("MANUAL") // "PHOTO" | "MANUAL"
+  startOcrConfidence Float?
+  endOcrConfidence   Float?
+
+  // Double Ride & Co-Rider Split
+  isDoubleRide        Boolean   @default(false)
+  coRiderId           String?
+  coRiderConfirmation String    @default("NONE") // "NONE" | "PENDING" | "CONFIRMED" | "NOT_CONFIRMED"
+  coRiderConfirmedAt  DateTime?
+  fuelSplitType       String?   @default("NONE") // "NONE" | "PAID_BY_PRIMARY" | "PAID_BY_CO_RIDER" | "SPLIT_EQUALLY"
+  primaryRiderKm      Float?    @default(0)
+  coRiderKm           Float?    @default(0)
+  primaryFuelShare    Float?    @default(0)
+  coRiderFuelShare    Float?    @default(0)
+
+  user       User     @relation("PrimaryRiderTrips", fields: [userId], references: [id], onDelete: Cascade)
+  coRider    User?    @relation("CoRiderTrips", fields: [coRiderId], references: [id], onDelete: SetNull)
+  bike       Bike     @relation(fields: [bikeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([coRiderId])
+  @@index([bikeId])
+  @@index([date])
+}
+
+model FuelEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  bikeId        String
+  date          DateTime @default(now())
+  currentKm     Int
+  litres        Float
+  amount        Float
+  pricePerLitre Float
+  billImageUrl  String?
+  remarks       String?
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bike          Bike     @relation(fields: [bikeId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([bikeId])
+  @@index([date])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  mobile    String
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([mobile])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  details    String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType])
+}
+
+model FuelSettlement {
+  id        String   @id @default(cuid())
+  userId    String
+  adminId   String?
+  amount    Float    // Positive if collected from employee, negative if reimbursed to employee
+  type      String   // "COLLECTED_FROM_EMPLOYEE" | "REIMBURSED_TO_EMPLOYEE" | "BALANCE_CLEAR"
+  notes     String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
