@@ -30,7 +30,7 @@ model Bike {
   id                 String       @id @default(cuid())
   name               String
   registrationNumber String       @unique
-  currentKm          Int          @default(0)
+  currentKm          Float        @default(0)
   fuelType           String       @default("Petrol")
   mileageTarget      Float        @default(30.0)
   fuelPrice          Float        @default(113.0)
@@ -46,9 +46,9 @@ model Trip {
   userId     String
   bikeId     String
   date       DateTime @default(now())
-  startingKm Int
-  endingKm   Int      @default(0)
-  distanceKm Int      @default(0)
+  startingKm Float
+  endingKm   Float    @default(0)
+  distanceKm Float    @default(0)
   purpose    String
   remarks      String?
   status     String   @default("COMPLETED") // "ACTIVE" | "COMPLETED"
@@ -67,6 +67,7 @@ model Trip {
   coRiderId           String?
   coRiderConfirmation String    @default("NONE") // "NONE" | "PENDING" | "CONFIRMED" | "NOT_CONFIRMED"
   coRiderConfirmedAt  DateTime?
+  coRiderRejectionAcknowledged Boolean @default(false)
   fuelSplitType       String?   @default("NONE") // "NONE" | "PAID_BY_PRIMARY" | "PAID_BY_CO_RIDER" | "SPLIT_EQUALLY"
   primaryRiderKm      Float?    @default(0)
   coRiderKm           Float?    @default(0)
@@ -90,7 +91,7 @@ model FuelEntry {
   userId        String
   bikeId        String
   date          DateTime @default(now())
-  currentKm     Int
+  currentKm     Float
   litres        Float
   amount        Float
   pricePerLitre Float

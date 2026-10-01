@@ -130,10 +130,10 @@ function AddTripContent() {
     loadBike();
   }, [queryStartKm]);
 
-  const numStart = parseInt(startingKm, 10) || 0;
-  const numEnd = parseInt(endingKm, 10) || 0;
-  const calculatedDistance = numEnd >= numStart ? numEnd - numStart : 0;
-  const isNegative = startingKm !== "" && endingKm !== "" && numEnd < numStart;
+  const numStart = Math.round(parseFloat(startingKm) * 10) / 10 || 0;
+  const numEnd = Math.round(parseFloat(endingKm) * 10) / 10 || 0;
+  const calculatedDistance = numEnd > numStart ? Number((numEnd - numStart).toFixed(2)) : 0;
+  const isNegative = startingKm !== "" && endingKm !== "" && numEnd <= numStart;
   const isLowerThanBikeOdo = bike && numStart < bike.currentKm;
 
   // Auto-calculate litres when amount changes
@@ -209,8 +209,13 @@ function AddTripContent() {
       return;
     }
 
-    if (numEnd < numStart) {
-      setErrorMsg("Ending KM cannot be less than Starting KM.");
+    if (numEnd <= numStart) {
+      const msg =
+        numEnd === numStart
+          ? "Ending KM cannot be the same as Starting KM. Travelled distance must be greater than 0."
+          : "Ending KM cannot be less than Starting KM.";
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
 
@@ -455,10 +460,11 @@ function AddTripContent() {
               <input
                 id="startKm"
                 type="number"
+                step="any"
                 min="0"
                 value={startingKm}
                 onChange={(e) => setStartingKm(e.target.value)}
-                placeholder="e.g. 7496"
+                placeholder="e.g. 7496.5"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono font-medium focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-hidden bg-white shadow-2xs"
                 required
               />
@@ -472,10 +478,11 @@ function AddTripContent() {
               <input
                 id="endKm"
                 type="number"
+                step="any"
                 min="0"
                 value={endingKm}
                 onChange={(e) => setEndingKm(e.target.value)}
-                placeholder="e.g. 7520"
+                placeholder="e.g. 7520.8"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono font-medium focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-hidden bg-white shadow-2xs"
                 required
               />
@@ -499,7 +506,9 @@ function AddTripContent() {
               </div>
               <div className="text-right">
                 {isNegative ? (
-                  <span className="text-sm font-bold text-rose-600">Ending &lt; Starting</span>
+                  <span className="text-sm font-bold text-rose-600">
+                    {numEnd === numStart ? "Ending cannot equal Starting" : "Ending < Starting"}
+                  </span>
                 ) : (
                   <span className="text-2xl font-extrabold text-emerald-700">
                     {calculatedDistance} km

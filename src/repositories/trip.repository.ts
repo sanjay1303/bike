@@ -82,6 +82,29 @@ export class TripRepository {
     });
   }
 
+  async findRejectedCoRiderTrips(userId: string) {
+    return prisma.trip.findMany({
+      where: {
+        userId,
+        isDoubleRide: true,
+        coRiderConfirmation: "NOT_CONFIRMED",
+        coRiderRejectionAcknowledged: false,
+      },
+      include: {
+        coRider: { select: { id: true, name: true, mobile: true } },
+        bike: { select: { id: true, name: true, registrationNumber: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  async acknowledgeRejection(tripId: string, userId: string) {
+    return prisma.trip.updateMany({
+      where: { id: tripId, userId },
+      data: { coRiderRejectionAcknowledged: true },
+    });
+  }
+
   async create(data: {
     userId: string;
     bikeId: string;
@@ -140,6 +163,7 @@ export class TripRepository {
     coRiderId?: string | null;
     coRiderConfirmation?: string;
     coRiderConfirmedAt?: Date | null;
+    coRiderRejectionAcknowledged?: boolean;
     fuelSplitType?: string;
     primaryRiderKm?: number | null;
     coRiderKm?: number | null;

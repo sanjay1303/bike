@@ -344,11 +344,12 @@ function AdminFuelContent() {
                 <label className="block font-semibold text-slate-700 mb-1">Odometer KM</label>
                 <input
                   type="number"
+                  step="any"
                   value={editingEntry.currentKm}
                   onChange={(e) =>
                     setEditingEntry({
                       ...editingEntry,
-                      currentKm: parseInt(e.target.value, 10) || 0,
+                      currentKm: parseFloat(e.target.value) || 0,
                     })
                   }
                   className="w-full px-3 py-2 border rounded-xl font-mono"

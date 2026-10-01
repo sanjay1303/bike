@@ -45,8 +45,11 @@ import { ActiveRideCard } from "@/components/dashboard/ActiveRideCard";
 import { EndRideModal } from "@/components/dashboard/EndRideModal";
 import { BikeInUseModal } from "@/components/dashboard/BikeInUseModal";
 import { CoRideConfirmationCard } from "@/components/dashboard/CoRideConfirmationCard";
+import { CoRideRejectedModal } from "@/components/dashboard/CoRideRejectedModal";
+import { useRouter } from "next/navigation";
 
 export default function EmployeeDashboard() {
+  const router = useRouter();
   const toast = useToast();
 
   const [data, setData] = useState<EmployeeDashboardData | null>(null);
@@ -68,6 +71,10 @@ export default function EmployeeDashboard() {
   // Bike In Use concurrency modal state
   const [showBikeInUseModal, setShowBikeInUseModal] = useState(false);
   const [inUseRider, setInUseRider] = useState<ActiveRiderInfo | null>(null);
+
+  // Co-Ride Rejection modal state
+  const [dismissedRejectedIds, setDismissedRejectedIds] = useState<string[]>([]);
+  const activeRejectedRide = data?.rejectedCoRides?.find((r) => !dismissedRejectedIds.includes(r.id)) || null;
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -940,6 +947,23 @@ export default function EmployeeDashboard() {
         currentRider={inUseRider || data.bikeLiveStatus?.currentRider || null}
         bikeName={bike?.name}
         registrationNumber={bike?.registrationNumber}
+      />
+
+      {/* Co-Rider Declined / Rejected Modal Popup */}
+      <CoRideRejectedModal
+        isOpen={Boolean(activeRejectedRide)}
+        onClose={() => {
+          if (activeRejectedRide) {
+            setDismissedRejectedIds((prev) => [...prev, activeRejectedRide.id]);
+          }
+        }}
+        rejectedTrip={activeRejectedRide}
+        onCreateNewTrip={() => {
+          if (activeRejectedRide) {
+            setDismissedRejectedIds((prev) => [...prev, activeRejectedRide.id]);
+          }
+          router.push("/trips/new");
+        }}
       />
     </>
   );

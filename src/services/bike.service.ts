@@ -30,7 +30,10 @@ export class BikeService {
       throw new NotFoundError("No bike record to update.");
     }
 
-    const newKm = data.currentKm !== undefined ? parseInt(data.currentKm as any, 10) : existing.currentKm;
+    const newKm =
+      data.currentKm !== undefined
+        ? Math.round(parseFloat(data.currentKm as any) * 10) / 10
+        : existing.currentKm;
 
     // Rule 10: The current bike KM should never decrease
     if (newKm < existing.currentKm) {

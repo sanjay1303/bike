@@ -101,6 +101,11 @@ export const tripsApi = {
       body: JSON.stringify({ confirmed }),
     }),
 
+  acknowledgeRejection: (tripId: string) =>
+    fetchJson<{ success: boolean }>(`/api/trips/${tripId}/acknowledge-rejection`, {
+      method: "POST",
+    }),
+
   getCoRiders: () =>
     fetchJson<{ coRiders: Array<{ id: string; name: string; mobile: string }> }>("/api/employees/co-riders"),
 

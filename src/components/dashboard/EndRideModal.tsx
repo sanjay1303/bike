@@ -121,9 +121,9 @@ export function EndRideModal({
   if (!isOpen || !activeTrip) return null;
 
   const startKm = activeTrip.startingKm;
-  const numEnd = parseInt(endingKm, 10) || 0;
-  const distanceKm = numEnd >= startKm ? numEnd - startKm : 0;
-  const isInvalidDistance = endingKm !== "" && numEnd < startKm;
+  const numEnd = Math.round(parseFloat(endingKm) * 10) / 10 || 0;
+  const distanceKm = numEnd > startKm ? Number((numEnd - startKm).toFixed(2)) : 0;
+  const isInvalidDistance = endingKm !== "" && numEnd <= startKm;
 
   // Handle Photo selection for stopping point odometer
   const handlePhotoSelected = async (file: File) => {
@@ -209,8 +209,12 @@ export function EndRideModal({
       return;
     }
 
-    if (numEnd < startKm) {
-      toast.error(`Ending KM (${numEnd}) cannot be less than Starting KM (${startKm}).`);
+    if (numEnd <= startKm) {
+      toast.error(
+        numEnd === startKm
+          ? `Ending KM cannot be the same as Starting KM (${startKm} km).`
+          : `Ending KM (${numEnd} km) cannot be less than Starting KM (${startKm} km).`
+      );
       return;
     }
 
@@ -415,10 +419,11 @@ export function EndRideModal({
               <input
                 id="endKmInput"
                 type="number"
+                step="any"
                 min={startKm}
                 value={endingKm}
                 onChange={(e) => setEndingKm(e.target.value)}
-                placeholder={`e.g. ${startKm + 25}`}
+                placeholder={`e.g. ${startKm + 25.5}`}
                 className="w-full px-4 py-3 bg-white rounded-2xl border-2 border-emerald-400 font-mono text-2xl font-black text-slate-900 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 focus:outline-hidden tracking-wider shadow-inner"
                 required
               />
@@ -428,7 +433,9 @@ export function EndRideModal({
             </div>
             {isInvalidDistance && (
               <p className="text-xs text-rose-600 mt-1 font-semibold">
-                Ending KM cannot be less than Starting KM ({startKm} km).
+                {numEnd === startKm
+                  ? `Ending KM cannot be the same as Starting KM (${startKm} km). Distance must be greater than 0.`
+                  : `Ending KM cannot be less than Starting KM (${startKm} km).`}
               </p>
             )}
           </div>

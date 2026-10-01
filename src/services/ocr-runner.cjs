@@ -22,7 +22,7 @@ async function main() {
 
     const worker = await createWorker('eng');
     await worker.setParameters({
-      tessedit_char_whitelist: '0123456789KMkm/h ',
+      tessedit_char_whitelist: '0123456789KMkm/h. ',
     });
 
     // Center crop
@@ -52,15 +52,15 @@ async function main() {
         const text = res.data.text.trim();
         if (text) rawText += ' ' + text;
 
-        const digitMatches = text.match(/\b0?([1-9]\d{3,5})\b/g);
+        const digitMatches = text.match(/\b0?([1-9]\d{1,5}(?:\.\d)?)\b/g);
         if (digitMatches) {
           for (const dm of digitMatches) {
             const cleaned = dm.replace(/^0+/, '');
-            const num = parseInt(cleaned, 10);
-            if (num >= 500 && num <= 999999) {
-              const candidate = num > 50000 ? Math.floor(num / 10) : num;
-              if (!bestReading || res.data.confidence > bestConfidence) {
-                bestReading = candidate;
+            const num = parseFloat(cleaned);
+            if (!isNaN(num) && num >= 1 && num <= 999999) {
+              const candidate = num > 50000 && !cleaned.includes('.') ? Math.floor(num / 10) : num;
+              if (bestReading === null || res.data.confidence > bestConfidence) {
+                bestReading = Math.round(candidate * 10) / 10;
                 bestConfidence = res.data.confidence;
               }
             }

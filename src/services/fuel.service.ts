@@ -63,7 +63,7 @@ export class FuelService {
     date?: string | Date;
     billImageUrl?: string | null;
   }) {
-    const currentKm = parseInt(data.currentKm as any, 10);
+    const currentKm = Math.round(parseFloat(data.currentKm as any) * 10) / 10;
     const litres = parseFloat(data.litres as any);
     const amount = parseFloat(data.amount as any);
     const remarks = data.remarks?.trim() || null;
@@ -131,7 +131,10 @@ export class FuelService {
       throw new ForbiddenError("You do not have permission to modify this fuel entry.");
     }
 
-    const currentKm = data.currentKm !== undefined ? parseInt(data.currentKm as any, 10) : existing.currentKm;
+    const currentKm =
+      data.currentKm !== undefined
+        ? Math.round(parseFloat(data.currentKm as any) * 10) / 10
+        : existing.currentKm;
     const litres = data.litres !== undefined ? parseFloat(data.litres as any) : existing.litres;
     const amount = data.amount !== undefined ? parseFloat(data.amount as any) : existing.amount;
     const remarks = data.remarks !== undefined ? data.remarks?.trim() : existing.remarks;

@@ -113,7 +113,7 @@ export class TripService {
       }
     }
 
-    const startingKm = parseInt(data.startingKm as any, 10);
+    const startingKm = Math.round(parseFloat(data.startingKm as any) * 10) / 10;
     const purpose = (data.purpose || "").trim();
     const remarks = data.remarks?.trim() || null;
 
@@ -242,14 +242,16 @@ export class TripService {
       throw new ForbiddenError("You can only complete your own active ride.");
     }
 
-    const endingKm = parseInt(data.endingKm as any, 10);
+    const endingKm = Math.round(parseFloat(data.endingKm as any) * 10) / 10;
     if (isNaN(endingKm) || endingKm < 0) {
       throw new ValidationError("Please enter a valid Ending KM.");
     }
 
-    if (endingKm < activeTrip.startingKm) {
+    if (endingKm <= activeTrip.startingKm) {
       throw new ValidationError(
-        `Ending KM (${endingKm}) cannot be less than Starting KM (${activeTrip.startingKm}).`
+        endingKm === activeTrip.startingKm
+          ? `Ending KM cannot be the same as Starting KM (${activeTrip.startingKm} km).`
+          : `Ending KM (${endingKm} km) cannot be less than Starting KM (${activeTrip.startingKm} km).`
       );
     }
 
@@ -534,8 +536,8 @@ export class TripService {
       };
     }
   ) {
-    const startingKm = parseInt(data.startingKm as any, 10);
-    const endingKm = parseInt(data.endingKm as any, 10);
+    const startingKm = Math.round(parseFloat(data.startingKm as any) * 10) / 10;
+    const endingKm = Math.round(parseFloat(data.endingKm as any) * 10) / 10;
     const purpose = (data.purpose || "").trim();
     const remarks = data.remarks?.trim() || null;
     const date = data.date ? new Date(data.date) : new Date();
@@ -547,9 +549,11 @@ export class TripService {
     if (isNaN(endingKm) || endingKm < 0) {
       throw new ValidationError("Please enter a valid Ending KM.");
     }
-    if (endingKm < startingKm) {
+    if (endingKm <= startingKm) {
       throw new ValidationError(
-        "Invalid Odometer Reading. Ending KM cannot be lower than Starting KM."
+        endingKm === startingKm
+          ? "Invalid Odometer Reading. Ending KM cannot be the same as Starting KM."
+          : "Invalid Odometer Reading. Ending KM cannot be lower than Starting KM."
       );
     }
     if (!purpose) {
@@ -787,9 +791,22 @@ export class TripService {
     }
 
     const status = confirmed ? "CONFIRMED" : "NOT_CONFIRMED";
+
+    // If co-rider rejected:
+    // If the trip was ACTIVE, cancel it and release the bike to AVAILABLE so creator can start a new trip
+    let tripStatus = trip.status;
+    if (!confirmed && trip.status === "ACTIVE") {
+      tripStatus = "CANCELLED";
+      await bikeRepository.updateBike(trip.bikeId, {
+        status: "AVAILABLE",
+      });
+    }
+
     const updatedTrip = await tripRepository.update(trip.id, {
+      status: tripStatus,
       coRiderConfirmation: status,
       coRiderConfirmedAt: new Date(),
+      coRiderRejectionAcknowledged: false,
     });
 
     await auditRepository.recordLog(
@@ -832,6 +849,45 @@ export class TripService {
     }));
   }
 
+  /**
+   * Returns list of rejected double ride notifications for the trip creator.
+   */
+  async getRejectedCoRides(userId: string) {
+    const trips = await tripRepository.findRejectedCoRiderTrips(userId);
+    return trips.map((t) => ({
+      id: t.id,
+      date: t.date,
+      startingKm: t.startingKm,
+      endingKm: t.endingKm,
+      distanceKm: t.distanceKm,
+      purpose: t.purpose,
+      status: t.status,
+      coRider: t.coRider
+        ? {
+            id: t.coRider.id,
+            name: t.coRider.name,
+            mobile: t.coRider.mobile,
+          }
+        : null,
+      coRiderConfirmedAt: t.coRiderConfirmedAt,
+    }));
+  }
+
+  /**
+   * Primary rider acknowledges co-rider rejection notification.
+   */
+  async acknowledgeCoRideRejection(session: UserSession, tripId: string) {
+    const trip = await tripRepository.findById(tripId);
+    if (!trip) {
+      throw new NotFoundError("Trip not found.");
+    }
+    if (trip.userId !== session.userId && session.role !== "ADMIN") {
+      throw new ForbiddenError("You can only acknowledge notifications for your own trips.");
+    }
+    await tripRepository.acknowledgeRejection(tripId, trip.userId);
+    return { success: true };
+  }
+
   async updateTrip(
     session: UserSession,
     id: string,
@@ -853,12 +909,20 @@ export class TripService {
     }
 
     const startingKm =
-      data.startingKm !== undefined ? parseInt(data.startingKm as any, 10) : existing.startingKm;
+      data.startingKm !== undefined ? Math.round(parseFloat(data.startingKm as any) * 10) / 10 : existing.startingKm;
     const endingKm =
-      data.endingKm !== undefined ? parseInt(data.endingKm as any, 10) : existing.endingKm;
+      data.endingKm !== undefined ? Math.round(parseFloat(data.endingKm as any) * 10) / 10 : existing.endingKm;
     const purpose = (data.purpose || existing.purpose).trim();
     const remarks = data.remarks !== undefined ? data.remarks?.trim() : existing.remarks;
     const date = data.date ? new Date(data.date) : existing.date;
+
+    if (endingKm <= startingKm) {
+      throw new ValidationError(
+        endingKm === startingKm
+          ? "Ending KM cannot be the same as Starting KM."
+          : "Ending KM cannot be less than Starting KM."
+      );
+    }
 
     const distanceKm = calculateTripDistance(startingKm, endingKm);
 

@@ -245,8 +245,10 @@ export function OdometerPhotoScanner({
   };
 
   // Validation logic against previous valid bike KM
-  const parsedKm = parseInt(editableKm, 10);
-  const isInvalidLowerKm = !isNaN(parsedKm) && parsedKm < previousValidKm;
+  const parsedKm = Math.round(parseFloat(editableKm) * 10) / 10;
+  const isInvalidLowerKm = !isNaN(parsedKm) && (
+    type === "end" ? parsedKm <= previousValidKm : parsedKm < previousValidKm
+  );
 
   // Confirming the reading
   const handleConfirm = () => {
@@ -257,7 +259,9 @@ export function OdometerPhotoScanner({
 
     if (isInvalidLowerKm) {
       toast.error(
-        `The new reading (${parsedKm} km) cannot be lower than previous reading (${previousValidKm} km).`
+        type === "end" && parsedKm === previousValidKm
+          ? `The ending reading cannot be the same as starting reading (${previousValidKm} km).`
+          : `The new reading (${parsedKm} km) cannot be lower than previous reading (${previousValidKm} km).`
       );
       return;
     }
@@ -285,7 +289,11 @@ export function OdometerPhotoScanner({
       return;
     }
     if (isInvalidLowerKm) {
-      toast.error(`Reading (${parsedKm} km) cannot be lower than previous KM (${previousValidKm} km).`);
+      toast.error(
+        type === "end" && parsedKm === previousValidKm
+          ? `The ending reading cannot be the same as starting reading (${previousValidKm} km).`
+          : `Reading (${parsedKm} km) cannot be lower than previous KM (${previousValidKm} km).`
+      );
       return;
     }
     onReadingConfirmed(parsedKm, null, "MANUAL", null);
@@ -444,6 +452,7 @@ export function OdometerPhotoScanner({
                 <input
                   ref={editInputRef}
                   type="number"
+                  step="any"
                   min="0"
                   value={editableKm}
                   onChange={(e) => setEditableKm(e.target.value)}
@@ -481,8 +490,9 @@ export function OdometerPhotoScanner({
                 <span>⚠️ Invalid Odometer Reading</span>
               </div>
               <p className="text-[11px] text-rose-700 pl-5">
-                The new reading ({parsedKm} km) is lower than the previous reading ({previousValidKm} km).
-                Please retake the photo or correct the reading.
+                {type === "end" && parsedKm === previousValidKm
+                  ? `Ending reading (${parsedKm} km) cannot be the same as starting reading (${previousValidKm} km). Journey distance must be greater than 0.`
+                  : `The new reading (${parsedKm} km) is lower than the previous reading (${previousValidKm} km). Please retake the photo or correct the reading.`}
               </p>
             </div>
           )}
@@ -607,6 +617,7 @@ export function OdometerPhotoScanner({
             <div className="flex items-center gap-2">
               <input
                 type="number"
+                step="any"
                 min="0"
                 value={editableKm}
                 onChange={(e) => setEditableKm(e.target.value)}
@@ -630,7 +641,9 @@ export function OdometerPhotoScanner({
 
           {isInvalidLowerKm && (
             <p className="text-xs font-medium text-rose-600">
-              ⚠️ Reading ({parsedKm} km) cannot be lower than previous KM ({previousValidKm} km).
+              ⚠️ {type === "end" && parsedKm === previousValidKm
+                ? `Ending reading (${parsedKm} km) cannot be the same as starting reading (${previousValidKm} km).`
+                : `Reading (${parsedKm} km) cannot be lower than previous KM (${previousValidKm} km).`}
             </p>
           )}
 

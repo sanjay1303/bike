@@ -10,7 +10,7 @@ import { tripService } from "@/services/trip.service";
 
 export class ReportService {
   async getEmployeeDashboard(session: UserSession) {
-    const [user, bike, effectiveDist, fuelStats, recentTrips, settlementsOffset, bikeLiveStatus, pendingCoRides] = await Promise.all([
+    const [user, bike, effectiveDist, fuelStats, recentTrips, settlementsOffset, bikeLiveStatus, pendingCoRides, rejectedCoRides] = await Promise.all([
       userRepository.findById(session.userId),
       bikeRepository.getPrimaryBike(),
       tripRepository.getUserEffectiveDistance(session.userId),
@@ -19,6 +19,7 @@ export class ReportService {
       settlementRepository.getSumForUser(session.userId),
       tripService.getActiveBikeStatus(),
       tripService.getPendingCoRides(session.userId),
+      tripService.getRejectedCoRides(session.userId),
     ]);
 
     if (!user) {
@@ -80,6 +81,7 @@ export class ReportService {
       activeTrip: bikeLiveStatus.activeTrip && bikeLiveStatus.activeTrip.userId === session.userId ? bikeLiveStatus.activeTrip : null,
       bikeLiveStatus,
       pendingCoRides,
+      rejectedCoRides,
     };
   }
 

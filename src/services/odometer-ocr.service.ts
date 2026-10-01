@@ -156,9 +156,9 @@ export class MockOdometerOcrProvider implements IOdometerOcrProvider {
       lowerFilename.startsWith("odo_test_");
 
     if (isExplicitTestFile) {
-      const match = lowerFilename.match(/(\d{4,6})/);
+      const match = lowerFilename.match(/(\d{1,6}(?:\.\d+)?)/);
       if (match) {
-        const val = parseInt(match[1], 10);
+        const val = parseFloat(match[1]);
         return {
           success: true,
           reading: val,

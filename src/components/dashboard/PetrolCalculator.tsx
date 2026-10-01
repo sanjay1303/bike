@@ -84,7 +84,8 @@ export function PetrolCalculator({
           <div className="relative flex items-center">
             <input
               type="number"
-              min="1"
+              step="any"
+              min="0.1"
               max="2000"
               value={distance || ""}
               onChange={(e) => setDistance(Math.max(0, Number(e.target.value)))}

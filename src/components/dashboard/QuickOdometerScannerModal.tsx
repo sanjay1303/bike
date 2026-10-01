@@ -273,7 +273,7 @@ export function QuickOdometerScannerModal({
     setScanState("idle");
   };
 
-  const parsedKm = parseInt(editableKm, 10);
+  const parsedKm = Math.round(parseFloat(editableKm) * 10) / 10;
   const isValidKm = !isNaN(parsedKm) && parsedKm >= 0;
 
   // Start active ride on the bike (check out bike)
@@ -583,10 +583,11 @@ export function QuickOdometerScannerModal({
                   <div className="relative flex-1">
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={editableKm}
                       onChange={(e) => setEditableKm(e.target.value)}
-                      placeholder="e.g. 7496"
+                      placeholder="e.g. 7496.5"
                       className="w-full px-4 py-3 bg-white rounded-2xl border-2 border-emerald-400 font-mono text-2xl sm:text-3xl font-black text-slate-900 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 focus:outline-hidden tracking-wider shadow-inner"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">

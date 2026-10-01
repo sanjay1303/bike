@@ -170,6 +170,7 @@ export default function AdminBikePage() {
               <input
                 id="bikeKm"
                 type="number"
+                step="any"
                 min={bike?.currentKm || 0}
                 value={currentKm}
                 onChange={(e) => setCurrentKm(e.target.value)}

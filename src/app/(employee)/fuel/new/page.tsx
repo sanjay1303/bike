@@ -148,7 +148,7 @@ export default function AddFuelPage() {
     e.preventDefault();
     setErrorMsg("");
 
-    const numKm = parseInt(currentKm, 10);
+    const numKm = Math.round(parseFloat(currentKm) * 10) / 10;
     if (isNaN(numKm) || numKm <= 0) {
       setErrorMsg("Please enter a valid Current KM.");
       return;
@@ -282,10 +282,11 @@ export default function AddFuelPage() {
               <input
                 id="currentKm"
                 type="number"
+                step="any"
                 min="0"
                 value={currentKm}
                 onChange={(e) => setCurrentKm(e.target.value)}
-                placeholder="12500"
+                placeholder="12500.5"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono font-medium focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-hidden bg-white shadow-2xs"
                 required
               />

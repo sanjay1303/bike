@@ -53,6 +53,22 @@ export interface PendingCoRiderConfirmation {
   createdAt: string | Date;
 }
 
+export interface RejectedCoRideInfo {
+  id: string;
+  date: string | Date;
+  startingKm: number;
+  endingKm: number;
+  distanceKm: number;
+  purpose: string;
+  status: string;
+  coRider: {
+    id: string;
+    name: string;
+    mobile: string;
+  } | null;
+  coRiderConfirmedAt?: string | Date | null;
+}
+
 export interface ActiveRiderInfo {
   id: string;
   name: string;
@@ -110,6 +126,7 @@ export interface Trip {
   coRiderId?: string | null;
   coRiderConfirmation?: CoRiderConfirmationStatus;
   coRiderConfirmedAt?: string | Date | null;
+  coRiderRejectionAcknowledged?: boolean;
   fuelSplitType?: FuelSplitType;
   primaryRiderKm?: number | null;
   coRiderKm?: number | null;
@@ -204,6 +221,7 @@ export interface EmployeeDashboardData {
   activeTrip?: Trip | null;
   bikeLiveStatus?: BikeLiveStatus;
   pendingCoRides?: PendingCoRiderConfirmation[];
+  rejectedCoRides?: RejectedCoRideInfo[];
 }
 
 export interface AdminDashboardData {

@@ -5,10 +5,14 @@ import { ValidationError } from "../errors";
  * Formula: endingKm - startingKm
  */
 export function calculateTripDistance(startingKm: number, endingKm: number): number {
-  if (endingKm < startingKm) {
-    throw new ValidationError("Ending KM cannot be less than Starting KM.");
+  if (endingKm <= startingKm) {
+    throw new ValidationError(
+      endingKm === startingKm
+        ? "Ending KM cannot be the same as Starting KM."
+        : "Ending KM cannot be less than Starting KM."
+    );
   }
-  return endingKm - startingKm;
+  return Number((endingKm - startingKm).toFixed(2));
 }
 
 /**
@@ -59,7 +63,7 @@ export function formatCurrency(amount: number): string {
  * Format kilometer with commas
  */
 export function formatKm(km: number): string {
-  return new Intl.NumberFormat("en-IN").format(km) + " km";
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(km) + " km";
 }
 
 /**

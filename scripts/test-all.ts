@@ -36,6 +36,10 @@ async function runTests() {
   const dist = calculateTripDistance(12450, 12470);
   assert(dist === 20, "Trip distance calculation (12470 - 12450 = 20 km)");
 
+  // Decimal meter reading calculation (e.g. 123.8 km to 150.2 km = 26.4 km)
+  const decimalDist = calculateTripDistance(123.8, 150.2);
+  assert(decimalDist === 26.4, "Trip distance with decimal meters (150.2 - 123.8 = 26.4 km)");
+
   // Ending KM less than Starting KM throws error
   let threwDistanceError = false;
   try {
@@ -44,6 +48,15 @@ async function runTests() {
     threwDistanceError = true;
   }
   assert(threwDistanceError, "Ending KM < Starting KM throws validation error");
+
+  // Ending KM equal to Starting KM throws error (Starting and Ending cannot be the same)
+  let threwEqualDistanceError = false;
+  try {
+    calculateTripDistance(12500, 12500);
+  } catch {
+    threwEqualDistanceError = true;
+  }
+  assert(threwEqualDistanceError, "Ending KM === Starting KM throws validation error (cannot be same)");
 
   // Price per litre calculation
   const pPerL = calculatePricePerLitre(250, 2.5);
@@ -527,19 +540,32 @@ async function runTests() {
     "User B is blocked with popup data displaying User A's name as current rider"
   );
 
-  // Test 4: User A ends ride at stopping point by adding ending reading
+  // Test 3b: User A tries to end ride with identical ending KM as starting KM (must be rejected)
+  let threwSameOdoError = false;
+  try {
+    await tripService.endTrip(testSession, {
+      tripId: startRideRes.trip.id,
+      endingKm: testBaseKm,
+      remarks: "Testing same starting and ending KM",
+    });
+  } catch {
+    threwSameOdoError = true;
+  }
+  assert(threwSameOdoError, "Ending KM equal to Starting KM is rejected in endTrip service");
+
+  // Test 4: User A ends ride at stopping point with decimal reading (e.g. +20.8 km)
   const endRideRes = await tripService.endTrip(testSession, {
     tripId: startRideRes.trip.id,
-    endingKm: testBaseKm + 20,
+    endingKm: testBaseKm + 20.8,
     remarks: "Client meeting completed",
     endReadingMethod: "PHOTO",
     endOcrConfidence: 0.95,
   });
   assert(
     endRideRes.trip.status === "COMPLETED" &&
-    endRideRes.trip.distanceKm === 20 &&
-    endRideRes.trip.endingKm === testBaseKm + 20,
-    "User A completes ride with stop reading (20 km calculated)"
+    endRideRes.trip.distanceKm === 20.8 &&
+    endRideRes.trip.endingKm === testBaseKm + 20.8,
+    "User A completes ride with decimal stop reading (20.8 km calculated)"
   );
 
   // Test 5: Live status now shows bike is AVAILABLE and User A is recorded as Last Used By
@@ -547,7 +573,7 @@ async function runTests() {
   assert(
     liveStatusAfterEnd.inUse === false &&
     liveStatusAfterEnd.lastRider?.name === testSession.name &&
-    liveStatusAfterEnd.lastRider?.endingKm === testBaseKm + 20,
+    liveStatusAfterEnd.lastRider?.endingKm === testBaseKm + 20.8,
     "Live status shows bike is now AVAILABLE and records User A as Last Used By"
   );
 
@@ -705,6 +731,39 @@ async function runTests() {
     declinedTripRecord?.coRiderConfirmation === "NOT_CONFIRMED",
     "Declined trip persists NOT_CONFIRMED status in database"
   );
+
+  // Test 6: Primary rider (User A) dashboard receives popup notification data for the rejected trip
+  const dashboardDataA = await reportService.getEmployeeDashboard(userASession);
+  assert(
+    Boolean(dashboardDataA.rejectedCoRides?.some((r) => r.id === declineTrip.id && r.coRider?.id === userB!.id)),
+    "User A dashboard contains rejected co-ride notification popup data"
+  );
+
+  // Test 7: Acknowledging rejection clears popup from dashboard
+  await tripService.acknowledgeCoRideRejection(userASession, declineTrip.id);
+  const dashboardDataAAfter = await reportService.getEmployeeDashboard(userASession);
+  assert(
+    !dashboardDataAAfter.rejectedCoRides?.some((r) => r.id === declineTrip.id),
+    "After acknowledgement, rejected trip popup is cleared from User A dashboard"
+  );
+
+  // Test 8: Rejection of an ACTIVE double ride cancels trip and releases bike to AVAILABLE for new trip
+  const activeDoubleRes = await tripService.startTrip(userASession, {
+    startingKm: doubleBaseKm + 80,
+    purpose: "Client meeting with partner",
+    isDoubleRide: true,
+    coRiderId: userB!.id,
+  });
+  assert(activeDoubleRes.trip.status === "ACTIVE", "Active double ride started");
+
+  await tripService.confirmCoRide(userBSession, activeDoubleRes.trip.id, false);
+  const updatedActiveTrip = await prisma.trip.findUnique({ where: { id: activeDoubleRes.trip.id } });
+  const activeDeclinedBike = await prisma.bike.findUnique({ where: { id: bikeForDouble!.id } });
+  assert(
+    updatedActiveTrip?.status === "CANCELLED" && activeDeclinedBike?.status === "AVAILABLE",
+    "Rejection of active double ride cancels trip and releases bike to AVAILABLE so creator can start new trip"
+  );
+  await prisma.trip.delete({ where: { id: activeDoubleRes.trip.id } });
 
   // Clean up Test Suite 11 artifacts
   await prisma.fuelEntry.deleteMany({
