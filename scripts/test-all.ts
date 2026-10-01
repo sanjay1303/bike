@@ -733,9 +733,10 @@ async function runTests() {
   );
 
   // Test 6: Primary rider (User A) dashboard receives popup notification data for the rejected trip
+  const { reportService } = await import("../src/services/report.service");
   const dashboardDataA = await reportService.getEmployeeDashboard(userASession);
   assert(
-    Boolean(dashboardDataA.rejectedCoRides?.some((r) => r.id === declineTrip.id && r.coRider?.id === userB!.id)),
+    Boolean(dashboardDataA.rejectedCoRides?.some((r: any) => r.id === declineTrip.id && r.coRider?.id === userB!.id)),
     "User A dashboard contains rejected co-ride notification popup data"
   );
 
@@ -743,7 +744,7 @@ async function runTests() {
   await tripService.acknowledgeCoRideRejection(userASession, declineTrip.id);
   const dashboardDataAAfter = await reportService.getEmployeeDashboard(userASession);
   assert(
-    !dashboardDataAAfter.rejectedCoRides?.some((r) => r.id === declineTrip.id),
+    !dashboardDataAAfter.rejectedCoRides?.some((r: any) => r.id === declineTrip.id),
     "After acknowledgement, rejected trip popup is cleared from User A dashboard"
   );
 

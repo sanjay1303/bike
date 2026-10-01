@@ -46,7 +46,7 @@ export class LocalTesseractOcrProvider implements IOdometerOcrProvider {
     let tempCreated = false;
 
     try {
-      if (!targetPath || !fs.existsSync(targetPath)) {
+      if (!targetPath || !fs.existsSync(/*turbopackIgnore: true*/ targetPath)) {
         targetPath = path.join(os.tmpdir(), `ocr_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`);
         fs.writeFileSync(targetPath, imageBuffer);
         tempCreated = true;
@@ -92,7 +92,7 @@ export class LocalTesseractOcrProvider implements IOdometerOcrProvider {
         errorMessage: "Could not read odometer digits clearly. Please enter KM manually.",
       };
     } finally {
-      if (tempCreated && targetPath && fs.existsSync(targetPath)) {
+      if (tempCreated && targetPath && fs.existsSync(/*turbopackIgnore: true*/ targetPath)) {
         try {
           fs.unlinkSync(targetPath);
         } catch {}
