@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bike, ArrowRight, Shield, Zap, Sparkles, Lock, Eye, EyeOff, Phone } from "lucide-react";
+import { Bike, ArrowRight, Shield, Sparkles, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { useToast } from "@/components/common/Toast";
 import { authApi } from "@/api";
 
@@ -51,11 +51,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickFill = (num: string, pass: string) => {
-    setMobile(num);
-    setPassword(pass);
-    setErrorMsg("");
-  };
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-slate-50">
@@ -195,33 +190,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Development Quick Accounts */}
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 mb-2.5">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Demo Quick Login (Click to auto-fill)</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickFill("9999999999", "admin123")}
-                className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-left transition cursor-pointer"
-              >
-                <div className="font-semibold text-slate-800">Admin Account</div>
-                <div className="text-slate-500 font-mono">9999999999</div>
-                <div className="text-[10px] text-emerald-700 font-mono font-medium">Pass: admin123</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill("8888888888", "emp123")}
-                className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-left transition cursor-pointer"
-              >
-                <div className="font-semibold text-slate-800">Employee Account</div>
-                <div className="text-slate-500 font-mono">8888888888</div>
-                <div className="text-[10px] text-emerald-700 font-mono font-medium">Pass: emp123</div>
-              </button>
-            </div>
-          </div>
+
         </div>
       </div>
     </main>
