@@ -592,7 +592,22 @@ async function runTests() {
   // Ensure two active employee users exist for double-ride testing
   let userA = await prisma.user.findFirst({
     where: { mobile: "8888888888", status: "ACTIVE" },
+  }) || await prisma.user.findFirst({
+    where: { role: "EMPLOYEE", status: "ACTIVE" },
   });
+
+  if (!userA) {
+    userA = await prisma.user.create({
+      data: {
+        name: "Test Rider A",
+        mobile: "8888888888",
+        password: "$2b$10$wE1V6qfL5fF6y/qY.iB8G.c58Kx7tZ5d7dZ7dZ7dZ7dZ7dZ7dZ7d.",
+        role: "EMPLOYEE",
+        status: "ACTIVE",
+      },
+    });
+  }
+
   let userB = await prisma.user.findFirst({
     where: { mobile: "7777777777", status: "ACTIVE" },
   });
